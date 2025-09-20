@@ -1,0 +1,37 @@
+{
+  "name": "deedify",
+  "version": "1.0.0",
+  "description": "Tokenized raw-land fractional ownership platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:api": "cd apps/api && pnpm dev",
+    "dev:frontend": "cd frontend && pnpm dev",
+    "dev:valuation": "cd apps/valuation && pnpm dev",
+    "build": "turbo run build",
+    "build:api": "cd apps/api && pnpm build",
+    "build:frontend": "cd frontend && pnpm build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "db:migrate": "cd apps/api && pnpm prisma migrate dev",
+    "db:seed": "cd apps/api && pnpm prisma db seed",
+    "db:reset": "cd apps/api && pnpm prisma migrate reset --force",
+    "mint:collection": "cd apps/api && pnpm tsx scripts/mintParcelCollection.ts",
+    "mint:fractions": "cd apps/api && pnpm tsx scripts/mintFractionPass.ts",
+    "valuation:backfill": "cd apps/api && pnpm tsx scripts/backfillValuations.ts",
+    "onchain:sync": "cd apps/api && pnpm tsx scripts/syncOnchainHolders.ts",
+    "verify:auction": "cd apps/api && pnpm tsx scripts/verifyAuctionHouse.ts",
+    "start": "pnpm dev",
+    "install:all": "pnpm install && cd apps/api && pnpm install && cd ../valuation && pnpm install && cd ../../frontend && pnpm install"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.12",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.0"
+  },
+  "packageManager": "pnpm@8.10.0"
+}
