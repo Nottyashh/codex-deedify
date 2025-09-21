@@ -1,12 +1,13 @@
 import { PublicKey } from '@solana/web3.js';
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import { findMetadataPda, findMasterEditionPda } from '@metaplex-foundation/mpl-token-metadata';
 
 /**
  * Utility functions for generating deterministic PDAs and IDs
  */
 export class IdUtils {
   private static readonly PROGRAM_ID = new PublicKey('11111111111111111111111111111111'); // System program as default
+  private static readonly METADATA_PROGRAM_ID = new PublicKey(
+    'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'
+  );
 
   /**
    * Generate a deterministic PDA for a listing
@@ -152,15 +153,26 @@ export class IdUtils {
    * Create a metadata PDA using Umi
    */
   static createMetadataPda(mint: PublicKey): PublicKey {
-    const umi = createUmi('https://api.devnet.solana.com'); // Dummy URL for PDA generation
-    return findMetadataPda(umi, { mint }).publicKey;
+    const seeds = [
+      Buffer.from('metadata'),
+      this.METADATA_PROGRAM_ID.toBuffer(),
+      mint.toBuffer(),
+    ];
+    const [pda] = PublicKey.findProgramAddressSync(seeds, this.METADATA_PROGRAM_ID);
+    return pda;
   }
 
   /**
    * Create a master edition PDA using Umi
    */
   static createMasterEditionPda(mint: PublicKey): PublicKey {
-    const umi = createUmi('https://api.devnet.solana.com'); // Dummy URL for PDA generation
-    return findMasterEditionPda(umi, { mint }).publicKey;
+    const seeds = [
+      Buffer.from('metadata'),
+      this.METADATA_PROGRAM_ID.toBuffer(),
+      mint.toBuffer(),
+      Buffer.from('edition'),
+    ];
+    const [pda] = PublicKey.findProgramAddressSync(seeds, this.METADATA_PROGRAM_ID);
+    return pda;
   }
 }

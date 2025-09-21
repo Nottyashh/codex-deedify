@@ -18,7 +18,9 @@ export default function ProfilePage() {
   const [walletAddress, setWalletAddress] = useState(user?.walletAddress || '');
 
   if (!user) {
-    router.push('/auth/login');
+    if (typeof window !== 'undefined') {
+      router.push('/auth/login');
+    }
     return null;
   }
 
@@ -108,7 +110,7 @@ export default function ProfilePage() {
                 <div>
                   <div className="font-medium">Member Since</div>
                   <div className="text-gray-600">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </div>
                 </div>
               </div>
@@ -222,7 +224,7 @@ export default function ProfilePage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    toast.info('Listing creation coming soon');
+                    toast('Listing creation coming soon');
                   }}
                   className="w-full justify-start"
                 >

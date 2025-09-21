@@ -322,7 +322,7 @@ export class ListingsService {
     try {
       const valuation = await this.valuationService.estimateValue({
         location: listing.locationText,
-        parcelSize: listing.parcelSize,
+        parcelSize: Number(listing.parcelSize),
         geoJson: listing.geoJson,
       });
 
@@ -330,7 +330,7 @@ export class ListingsService {
         listing: {
           id: listing.id,
           title: listing.title,
-          currentPrice: listing.pricePerShare,
+          currentPrice: Number(listing.pricePerShare),
         },
         valuation,
       };
@@ -359,7 +359,7 @@ export class ListingsService {
     try {
       const valuation = await this.valuationService.estimateValue({
         location: listing.locationText,
-        parcelSize: listing.parcelSize,
+        parcelSize: Number(listing.parcelSize),
         geoJson: listing.geoJson,
       });
 

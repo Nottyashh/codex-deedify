@@ -201,7 +201,7 @@ export default function HoldingsPage() {
                       size="sm"
                       onClick={() => {
                         // TODO: Implement sell functionality
-                        toast.info('Sell functionality coming soon');
+                        toast('Sell functionality coming soon');
                       }}
                     >
                       Sell Shares

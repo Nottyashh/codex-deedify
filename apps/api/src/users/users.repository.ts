@@ -6,35 +6,51 @@ import { Prisma } from '@prisma/client';
 export class UsersRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findMany(args?: Prisma.UserFindManyArgs) {
+  async findMany<T extends Prisma.UserFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.UserFindManyArgs>
+  ) {
     return this.prisma.user.findMany(args);
   }
 
-  async findUnique(args: Prisma.UserFindUniqueArgs) {
+  async findUnique<T extends Prisma.UserFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserFindUniqueArgs>
+  ) {
     return this.prisma.user.findUnique(args);
   }
 
-  async findFirst(args: Prisma.UserFindFirstArgs) {
+  async findFirst<T extends Prisma.UserFindFirstArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserFindFirstArgs>
+  ) {
     return this.prisma.user.findFirst(args);
   }
 
-  async create(args: Prisma.UserCreateArgs) {
+  async create<T extends Prisma.UserCreateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserCreateArgs>
+  ) {
     return this.prisma.user.create(args);
   }
 
-  async update(args: Prisma.UserUpdateArgs) {
+  async update<T extends Prisma.UserUpdateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserUpdateArgs>
+  ) {
     return this.prisma.user.update(args);
   }
 
-  async delete(args: Prisma.UserDeleteArgs) {
+  async delete<T extends Prisma.UserDeleteArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserDeleteArgs>
+  ) {
     return this.prisma.user.delete(args);
   }
 
-  async count(args?: Prisma.UserCountArgs) {
+  async count<T extends Prisma.UserCountArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.UserCountArgs>
+  ) {
     return this.prisma.user.count(args);
   }
 
-  async upsert(args: Prisma.UserUpsertArgs) {
+  async upsert<T extends Prisma.UserUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.UserUpsertArgs>
+  ) {
     return this.prisma.user.upsert(args);
   }
 }

@@ -18,29 +18,43 @@ import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
-const ListShareDto = z.object({
+const listShareSchema = z.object({
   shareMint: z.string().min(1, 'Share mint address is required'),
   price: z.number().positive('Price must be positive'),
 });
 
-const BuyShareDto = z.object({
+const buyShareSchema = z.object({
   shareMint: z.string().min(1, 'Share mint address is required'),
   buyerWallet: z.string().min(1, 'Buyer wallet address is required'),
 });
 
-const SellShareDto = z.object({
+const sellShareSchema = z.object({
   shareMint: z.string().min(1, 'Share mint address is required'),
   price: z.number().positive('Price must be positive'),
 });
 
-const CancelOrderDto = z.object({
+const cancelOrderSchema = z.object({
   orderId: z.string().cuid('Invalid order ID'),
 });
 
-type ListShareDto = z.infer<typeof ListShareDto>;
-type BuyShareDto = z.infer<typeof BuyShareDto>;
-type SellShareDto = z.infer<typeof SellShareDto>;
-type CancelOrderDto = z.infer<typeof CancelOrderDto>;
+type ListShareDto = {
+  shareMint: string;
+  price: number;
+};
+
+type BuyShareDto = {
+  shareMint: string;
+  buyerWallet: string;
+};
+
+type SellShareDto = {
+  shareMint: string;
+  price: number;
+};
+
+type CancelOrderDto = {
+  orderId: string;
+};
 
 @ApiTags('marketplace')
 @Controller('marketplace')
@@ -58,7 +72,7 @@ export class MarketplaceController {
   @ApiResponse({ status: 404, description: 'Share not found' })
   async listShare(
     @Request() req,
-    @Body(new ZodValidationPipe(ListShareDto)) listShareDto: ListShareDto,
+    @Body(new ZodValidationPipe(listShareSchema)) listShareDto: ListShareDto,
   ) {
     return this.marketplaceService.listShare(req.user.sub, listShareDto);
   }
@@ -74,7 +88,7 @@ export class MarketplaceController {
   @ApiResponse({ status: 404, description: 'Share or order not found' })
   async buyShare(
     @Request() req,
-    @Body(new ZodValidationPipe(BuyShareDto)) buyShareDto: BuyShareDto,
+    @Body(new ZodValidationPipe(buyShareSchema)) buyShareDto: BuyShareDto,
   ) {
     return this.marketplaceService.buyShare(req.user.sub, buyShareDto);
   }
@@ -90,7 +104,7 @@ export class MarketplaceController {
   @ApiResponse({ status: 404, description: 'Share not found' })
   async sellShare(
     @Request() req,
-    @Body(new ZodValidationPipe(SellShareDto)) sellShareDto: SellShareDto,
+    @Body(new ZodValidationPipe(sellShareSchema)) sellShareDto: SellShareDto,
   ) {
     return this.marketplaceService.sellShare(req.user.sub, sellShareDto);
   }
@@ -106,7 +120,7 @@ export class MarketplaceController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   async cancelOrder(
     @Request() req,
-    @Body(new ZodValidationPipe(CancelOrderDto)) cancelOrderDto: CancelOrderDto,
+    @Body(new ZodValidationPipe(cancelOrderSchema)) cancelOrderDto: CancelOrderDto,
   ) {
     return this.marketplaceService.cancelOrder(req.user.sub, cancelOrderDto);
   }

@@ -6,39 +6,55 @@ import { Prisma } from '@prisma/client';
 export class PayoutsRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findMany(args?: Prisma.PayoutFindManyArgs) {
+  async findMany<T extends Prisma.PayoutFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.PayoutFindManyArgs>
+  ) {
     return this.prisma.payout.findMany(args);
   }
 
-  async findUnique(args: Prisma.PayoutFindUniqueArgs) {
+  async findUnique<T extends Prisma.PayoutFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PayoutFindUniqueArgs>
+  ) {
     return this.prisma.payout.findUnique(args);
   }
 
-  async findFirst(args: Prisma.PayoutFindFirstArgs) {
+  async findFirst<T extends Prisma.PayoutFindFirstArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PayoutFindFirstArgs>
+  ) {
     return this.prisma.payout.findFirst(args);
   }
 
-  async create(args: Prisma.PayoutCreateArgs) {
+  async create<T extends Prisma.PayoutCreateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PayoutCreateArgs>
+  ) {
     return this.prisma.payout.create(args);
   }
 
-  async update(args: Prisma.PayoutUpdateArgs) {
+  async update<T extends Prisma.PayoutUpdateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PayoutUpdateArgs>
+  ) {
     return this.prisma.payout.update(args);
   }
 
-  async delete(args: Prisma.PayoutDeleteArgs) {
+  async delete<T extends Prisma.PayoutDeleteArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PayoutDeleteArgs>
+  ) {
     return this.prisma.payout.delete(args);
   }
 
-  async count(args?: Prisma.PayoutCountArgs) {
+  async count<T extends Prisma.PayoutCountArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.PayoutCountArgs>
+  ) {
     return this.prisma.payout.count(args);
   }
 
-  async aggregate(args: Prisma.PayoutAggregateArgs) {
+  async aggregate<T extends Prisma.PayoutAggregateArgs>(args: T) {
     return this.prisma.payout.aggregate(args);
   }
 
-  async upsert(args: Prisma.PayoutUpsertArgs) {
+  async upsert<T extends Prisma.PayoutUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PayoutUpsertArgs>
+  ) {
     return this.prisma.payout.upsert(args);
   }
 }

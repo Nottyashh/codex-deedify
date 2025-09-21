@@ -6,35 +6,51 @@ import { Prisma } from '@prisma/client';
 export class NftsRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findMany(args?: Prisma.ShareTokenFindManyArgs) {
+  async findMany<T extends Prisma.ShareTokenFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.ShareTokenFindManyArgs>
+  ) {
     return this.prisma.shareToken.findMany(args);
   }
 
-  async findUnique(args: Prisma.ShareTokenFindUniqueArgs) {
+  async findUnique<T extends Prisma.ShareTokenFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ShareTokenFindUniqueArgs>
+  ) {
     return this.prisma.shareToken.findUnique(args);
   }
 
-  async findFirst(args: Prisma.ShareTokenFindFirstArgs) {
+  async findFirst<T extends Prisma.ShareTokenFindFirstArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ShareTokenFindFirstArgs>
+  ) {
     return this.prisma.shareToken.findFirst(args);
   }
 
-  async create(args: Prisma.ShareTokenCreateArgs) {
+  async create<T extends Prisma.ShareTokenCreateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ShareTokenCreateArgs>
+  ) {
     return this.prisma.shareToken.create(args);
   }
 
-  async update(args: Prisma.ShareTokenUpdateArgs) {
+  async update<T extends Prisma.ShareTokenUpdateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ShareTokenUpdateArgs>
+  ) {
     return this.prisma.shareToken.update(args);
   }
 
-  async delete(args: Prisma.ShareTokenDeleteArgs) {
+  async delete<T extends Prisma.ShareTokenDeleteArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ShareTokenDeleteArgs>
+  ) {
     return this.prisma.shareToken.delete(args);
   }
 
-  async count(args?: Prisma.ShareTokenCountArgs) {
+  async count<T extends Prisma.ShareTokenCountArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.ShareTokenCountArgs>
+  ) {
     return this.prisma.shareToken.count(args);
   }
 
-  async upsert(args: Prisma.ShareTokenUpsertArgs) {
+  async upsert<T extends Prisma.ShareTokenUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ShareTokenUpsertArgs>
+  ) {
     return this.prisma.shareToken.upsert(args);
   }
 }

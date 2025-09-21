@@ -16,7 +16,7 @@ import { KycService } from './kyc.service';
 import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 
-const InitiateKycDto = z.object({
+const initiateKycSchema = z.object({
   userId: z.string().cuid('Invalid user ID'),
   email: z.string().email('Invalid email'),
   firstName: z.string().min(1, 'First name is required'),
@@ -25,7 +25,14 @@ const InitiateKycDto = z.object({
   country: z.string().min(2, 'Country code is required'),
 });
 
-type InitiateKycDto = z.infer<typeof InitiateKycDto>;
+type InitiateKycDto = {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  country: string;
+};
 
 @ApiTags('kyc')
 @Controller('kyc')
@@ -42,7 +49,7 @@ export class KycController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async initiateKyc(
     @Request() req,
-    @Body(new ZodValidationPipe(InitiateKycDto)) initiateKycDto: InitiateKycDto,
+    @Body(new ZodValidationPipe(initiateKycSchema)) initiateKycDto: InitiateKycDto,
   ) {
     return this.kycService.initiateVerification(req.user.sub, initiateKycDto);
   }

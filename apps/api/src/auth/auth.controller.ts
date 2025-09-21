@@ -15,25 +15,35 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 
-const LoginDto = z.object({
+const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-const RegisterDto = z.object({
+const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(['INVESTOR', 'LISTER']).default('INVESTOR'),
   walletAddress: z.string().optional(),
 });
 
-const UpdateProfileDto = z.object({
+const updateProfileSchema = z.object({
   walletAddress: z.string().optional(),
 });
 
-type LoginDto = z.infer<typeof LoginDto>;
-type RegisterDto = z.infer<typeof RegisterDto>;
-type UpdateProfileDto = z.infer<typeof UpdateProfileDto>;
+type LoginDto = {
+  email: string;
+  password: string;
+};
+
+type RegisterDto = {
+  email: string;
+  password: string;
+  role: 'INVESTOR' | 'LISTER';
+  walletAddress?: string;
+};
+
+type UpdateProfileDto = z.infer<typeof updateProfileSchema>;
 
 @ApiTags('auth')
 @Controller('auth')
@@ -46,7 +56,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 409, description: 'User already exists' })
-  async register(@Body(new ZodValidationPipe(RegisterDto)) registerDto: RegisterDto) {
+  async register(@Body(new ZodValidationPipe(registerSchema)) registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
@@ -55,7 +65,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body(new ZodValidationPipe(LoginDto)) loginDto: LoginDto) {
+  async login(@Body(new ZodValidationPipe(loginSchema)) loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
@@ -77,7 +87,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateProfile(
     @Request() req,
-    @Body(new ZodValidationPipe(UpdateProfileDto)) updateDto: UpdateProfileDto,
+    @Body(new ZodValidationPipe(updateProfileSchema)) updateDto: UpdateProfileDto,
   ) {
     return this.authService.updateProfile(req.user.sub, updateDto);
   }

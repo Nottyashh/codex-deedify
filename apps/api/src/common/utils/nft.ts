@@ -1,28 +1,30 @@
 import { PublicKey, Keypair } from '@solana/web3.js';
-import { 
-  createUmi, 
-  Umi,
+import { createUmi as createConfiguredUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import {
   generateSigner,
   keypairIdentity,
   percentAmount,
-} from '@metaplex-foundation/umi-bundle-defaults';
+  publicKey as umiPublicKey,
+  type Pda,
+  type PublicKey as UmiPublicKey,
+  type Umi,
+} from '@metaplex-foundation/umi';
 import {
   createNft,
-  createCollectionNft,
   findMetadataPda,
   findMasterEditionPda,
   findCollectionAuthorityRecordPda,
   mplTokenMetadata,
   updateV1,
-  fetchNft,
-  fetchCollection,
+  fetchDigitalAsset,
 } from '@metaplex-foundation/mpl-token-metadata';
-import { bundledUploader } from '@metaplex-foundation/umi-uploader-bundled-uploader';
+import { bundlrUploader } from '@metaplex-foundation/umi-uploader-bundlr';
 import { AppConfigService } from '../config/config.service';
 
 export interface NftMetadata {
   name: string;
   description: string;
+  symbol?: string;
   image?: string;
   attributes?: Array<{
     trait_type: string;
@@ -42,6 +44,7 @@ export interface NftMetadata {
   listingId?: string;
   shareIndex?: number;
   totalShares?: number;
+  sellerFeeBasisPoints?: number;
 }
 
 export class NftService {
@@ -51,10 +54,24 @@ export class NftService {
     private configService: AppConfigService,
     private mintAuthority: Keypair
   ) {
-    this.umi = createUmi(this.configService.heliusRpcUrl)
-      .use(keypairIdentity(this.mintAuthority))
-      .use(bundledUploader())
+    this.umi = createConfiguredUmi(this.configService.heliusRpcUrl)
+      .use(
+        keypairIdentity({
+          publicKey: this.toUmiPublicKey(this.mintAuthority.publicKey),
+          secretKey: new Uint8Array(this.mintAuthority.secretKey),
+        })
+      )
+      .use(bundlrUploader())
       .use(mplTokenMetadata());
+  }
+
+  private toUmiPublicKey(key: PublicKey | string): UmiPublicKey {
+    return typeof key === 'string' ? umiPublicKey(key) : umiPublicKey(key.toBase58());
+  }
+
+  private toWeb3PublicKey(key: UmiPublicKey | Pda): PublicKey {
+    const address = Array.isArray(key) ? key[0] : key;
+    return new PublicKey(address);
   }
 
   /**
@@ -66,23 +83,24 @@ export class NftService {
   ): Promise<{ mint: PublicKey; metadataPda: PublicKey }> {
     const mint = generateSigner(this.umi);
     const metadataPda = findMetadataPda(this.umi, { mint: mint.publicKey });
-    const masterEditionPda = findMasterEditionPda(this.umi, { mint: mint.publicKey });
+    findMasterEditionPda(this.umi, { mint: mint.publicKey });
 
     // Upload metadata to IPFS
     const metadataUri = await this.umi.uploader.uploadJson(metadata);
 
-    await createCollectionNft(this.umi, {
+    await createNft(this.umi, {
       mint,
       name: metadata.name,
-      symbol: 'DEEDIFY',
+      symbol: metadata.symbol ?? 'DEEDIFY',
       uri: metadataUri,
-      sellerFeeBasisPoints: percentAmount(2.5), // 2.5% royalty
+      sellerFeeBasisPoints: percentAmount(metadata.sellerFeeBasisPoints ?? 2.5),
       isMutable: true,
+      isCollection: true,
     }).sendAndConfirm(this.umi);
 
     return {
-      mint: mint.publicKey,
-      metadataPda,
+      mint: new PublicKey(mint.publicKey),
+      metadataPda: this.toWeb3PublicKey(metadataPda),
     };
   }
 
@@ -122,19 +140,21 @@ export class NftService {
       await createNft(this.umi, {
         mint,
         name: shareMetadata.name,
-        symbol: 'DEEDIFY',
+        symbol: shareMetadata.symbol ?? baseMetadata.symbol ?? 'DEEDIFY',
         uri: metadataUri,
-        sellerFeeBasisPoints: percentAmount(2.5),
+        sellerFeeBasisPoints: percentAmount(
+          shareMetadata.sellerFeeBasisPoints ?? baseMetadata.sellerFeeBasisPoints ?? 2.5
+        ),
         isMutable: true,
         collection: {
-          key: collectionMint,
+          key: this.toUmiPublicKey(collectionMint),
           verified: false, // Will be verified later
         },
       }).sendAndConfirm(this.umi);
 
       results.push({
-        mint: mint.publicKey,
-        metadataPda,
+        mint: new PublicKey(mint.publicKey),
+        metadataPda: this.toWeb3PublicKey(metadataPda),
         index: i,
       });
     }
@@ -149,19 +169,27 @@ export class NftService {
     mint: PublicKey,
     metadata: Partial<NftMetadata>
   ): Promise<string> {
-    const metadataPda = findMetadataPda(this.umi, { mint });
+    const umiMint = this.toUmiPublicKey(mint);
+    const metadataPda = findMetadataPda(this.umi, { mint: umiMint });
+    const existing = await fetchDigitalAsset(this.umi, umiMint);
 
     // Upload updated metadata
     const metadataUri = await this.umi.uploader.uploadJson(metadata);
 
     // Update the NFT
     await updateV1(this.umi, {
-      mint,
+      mint: umiMint,
+      metadata: metadataPda,
       data: {
-        name: metadata.name,
-        symbol: metadata.symbol,
-        uri: metadataUri,
-        sellerFeeBasisPoints: metadata.sellerFeeBasisPoints,
+        __option: 'Some',
+        value: {
+          name: metadata.name ?? existing.metadata.name,
+          symbol: metadata.symbol ?? existing.metadata.symbol,
+          uri: metadataUri,
+          sellerFeeBasisPoints:
+            metadata.sellerFeeBasisPoints ?? existing.metadata.sellerFeeBasisPoints,
+          creators: existing.metadata.creators,
+        },
       },
     }).sendAndConfirm(this.umi);
 
@@ -173,8 +201,7 @@ export class NftService {
    */
   async fetchNftMetadata(mint: PublicKey): Promise<any> {
     try {
-      const nft = await fetchNft(this.umi, mint);
-      return nft;
+      return await fetchDigitalAsset(this.umi, this.toUmiPublicKey(mint));
     } catch (error) {
       console.error('Failed to fetch NFT metadata:', error);
       return null;
@@ -186,8 +213,7 @@ export class NftService {
    */
   async fetchCollectionMetadata(collectionMint: PublicKey): Promise<any> {
     try {
-      const collection = await fetchCollection(this.umi, collectionMint);
-      return collection;
+      return await fetchDigitalAsset(this.umi, this.toUmiPublicKey(collectionMint));
     } catch (error) {
       console.error('Failed to fetch collection metadata:', error);
       return null;
@@ -202,8 +228,11 @@ export class NftService {
     authority: PublicKey
   ): Promise<boolean> {
     try {
-      const collection = await fetchCollection(this.umi, collectionMint);
-      return collection.updateAuthority === authority;
+      const collection = await fetchDigitalAsset(
+        this.umi,
+        this.toUmiPublicKey(collectionMint)
+      );
+      return new PublicKey(collection.metadata.updateAuthority).equals(authority);
     } catch (error) {
       console.error('Failed to verify collection authority:', error);
       return false;
@@ -214,14 +243,16 @@ export class NftService {
    * Get metadata PDA for a mint
    */
   getMetadataPda(mint: PublicKey): PublicKey {
-    return findMetadataPda(this.umi, { mint }).publicKey;
+    const pda = findMetadataPda(this.umi, { mint: this.toUmiPublicKey(mint) });
+    return this.toWeb3PublicKey(pda);
   }
 
   /**
    * Get master edition PDA for a mint
    */
   getMasterEditionPda(mint: PublicKey): PublicKey {
-    return findMasterEditionPda(this.umi, { mint }).publicKey;
+    const pda = findMasterEditionPda(this.umi, { mint: this.toUmiPublicKey(mint) });
+    return this.toWeb3PublicKey(pda);
   }
 
   /**
@@ -231,10 +262,11 @@ export class NftService {
     collectionMint: PublicKey,
     authority: PublicKey
   ): PublicKey {
-    return findCollectionAuthorityRecordPda(this.umi, {
-      mint: collectionMint,
-      collectionAuthority: authority,
-    }).publicKey;
+    const pda = findCollectionAuthorityRecordPda(this.umi, {
+      mint: this.toUmiPublicKey(collectionMint),
+      collectionAuthority: this.toUmiPublicKey(authority),
+    });
+    return this.toWeb3PublicKey(pda);
   }
 }
 

@@ -57,7 +57,8 @@ export class UsersService {
         _count: {
           select: {
             listings: true,
-            orders: true,
+            ordersAsSeller: true,
+            ordersAsBuyer: true,
             votes: true,
           },
         },
@@ -143,45 +144,47 @@ export class UsersService {
     const { page, limit, sortBy, sortOrder } = query;
     const skip = (page - 1) * limit;
 
-    const [listings, total] = await Promise.all([
-      this.usersRepository.findMany({
-        where: { id: userId },
-        select: {
-          listings: {
-            skip,
-            take: limit,
-            orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              locationText: true,
-              parcelSize: true,
-              totalShares: true,
-              pricePerShare: true,
-              status: true,
-              createdAt: true,
-              updatedAt: true,
-            },
+    const user = await this.usersRepository.findUnique({
+      where: { id: userId },
+      select: {
+        listings: {
+          skip,
+          take: limit,
+          orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            locationText: true,
+            parcelSize: true,
+            totalShares: true,
+            pricePerShare: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
           },
         },
-      }),
-      this.usersRepository.count({
-        where: { id: userId },
-        select: { listings: true },
-      }),
-    ]);
+        _count: {
+          select: { listings: true },
+        },
+      },
+    });
 
-    const userListings = listings[0]?.listings || [];
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const userListings = user.listings ?? [];
+    const total = user._count?.listings ?? userListings.length;
 
     return {
       data: userListings,
       pagination: {
         page,
         limit,
-        total: userListings.length,
-        totalPages: Math.ceil(userListings.length / limit),
-        hasNext: page < Math.ceil(userListings.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
         hasPrev: page > 1,
       },
     };
@@ -191,48 +194,71 @@ export class UsersService {
     const { page, limit, sortBy, sortOrder } = query;
     const skip = (page - 1) * limit;
 
-    const [orders, total] = await Promise.all([
-      this.usersRepository.findMany({
-        where: { id: userId },
-        select: {
-          orders: {
-            skip,
-            take: limit,
-            orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
-            select: {
-              id: true,
-              type: true,
-              price: true,
-              status: true,
-              txSignature: true,
-              createdAt: true,
-              listing: {
-                select: {
-                  id: true,
-                  title: true,
-                  locationText: true,
-                },
+    const user = await this.usersRepository.findUnique({
+      where: { id: userId },
+      select: {
+        ordersAsSeller: {
+          orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+          select: {
+            id: true,
+            type: true,
+            price: true,
+            status: true,
+            txSignature: true,
+            createdAt: true,
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                locationText: true,
               },
             },
           },
         },
-      }),
-      this.usersRepository.count({
-        where: { id: userId },
-        select: { orders: true },
-      }),
-    ]);
+        ordersAsBuyer: {
+          orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+          select: {
+            id: true,
+            type: true,
+            price: true,
+            status: true,
+            txSignature: true,
+            createdAt: true,
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                locationText: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            ordersAsSeller: true,
+            ordersAsBuyer: true,
+          },
+        },
+      },
+    });
 
-    const userOrders = orders[0]?.orders || [];
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const combinedOrders = [...(user.ordersAsSeller ?? []), ...(user.ordersAsBuyer ?? [])];
+    combinedOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const total = (user._count?.ordersAsSeller ?? 0) + (user._count?.ordersAsBuyer ?? 0);
+    const paginatedOrders = combinedOrders.slice(skip, skip + limit);
 
     return {
-      data: userOrders,
+      data: paginatedOrders,
       pagination: {
         page,
         limit,
-        total: userOrders.length,
-        totalPages: Math.ceil(userOrders.length / limit),
-        hasNext: page < Math.ceil(userOrders.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
         hasPrev: page > 1,
       },
     };
@@ -242,55 +268,57 @@ export class UsersService {
     const { page, limit, sortBy, sortOrder } = query;
     const skip = (page - 1) * limit;
 
-    const [votes, total] = await Promise.all([
-      this.usersRepository.findMany({
-        where: { id: userId },
-        select: {
-          votes: {
-            skip,
-            take: limit,
-            orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
-            select: {
-              id: true,
-              choice: true,
-              weightDecimal: true,
-              createdAt: true,
-              proposal: {
-                select: {
-                  id: true,
-                  title: true,
-                  description: true,
-                  status: true,
-                  endsAt: true,
-                  listing: {
-                    select: {
-                      id: true,
-                      title: true,
-                      locationText: true,
-                    },
+    const user = await this.usersRepository.findUnique({
+      where: { id: userId },
+      select: {
+        votes: {
+          skip,
+          take: limit,
+          orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+          select: {
+            id: true,
+            choice: true,
+            weightDecimal: true,
+            createdAt: true,
+            proposal: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                endsAt: true,
+                listing: {
+                  select: {
+                    id: true,
+                    title: true,
+                    locationText: true,
                   },
                 },
               },
             },
           },
         },
-      }),
-      this.usersRepository.count({
-        where: { id: userId },
-        select: { votes: true },
-      }),
-    ]);
+        _count: {
+          select: { votes: true },
+        },
+      },
+    });
 
-    const userVotes = votes[0]?.votes || [];
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const userVotes = user.votes ?? [];
+    const total = user._count?.votes ?? userVotes.length;
 
     return {
       data: userVotes,
       pagination: {
         page,
         limit,
-        total: userVotes.length,
-        totalPages: Math.ceil(userVotes.length / limit),
-        hasNext: page < Math.ceil(userVotes.length / limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
         hasPrev: page > 1,
       },
     };

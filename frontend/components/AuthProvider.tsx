@@ -10,6 +10,8 @@ interface User {
   role: 'INVESTOR' | 'LISTER' | 'ADMIN';
   walletAddress?: string;
   kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthContextType {

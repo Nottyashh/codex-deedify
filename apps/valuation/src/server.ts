@@ -162,19 +162,22 @@ app.post('/estimate', async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    logger.error({ error: error.message }, 'Valuation request failed');
-    
     if (error instanceof z.ZodError) {
+      logger.error({ error: error.message, details: error.errors }, 'Valuation request failed');
       res.status(400).json({
         error: 'Validation failed',
         details: error.errors,
       });
-    } else {
-      res.status(500).json({
-        error: 'Internal server error',
-        message: error.message,
-      });
+      return;
     }
+
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error({ error: err.message }, 'Valuation request failed');
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: err.message,
+    });
   }
 });
 
