@@ -18,7 +18,7 @@ import { JwtAuthGuard, ListerGuard, AdminGuard } from '../common/guards/jwt.guar
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
-const MintCollectionDto = z.object({
+const mintCollectionSchema = z.object({
   listingId: z.string().cuid(),
   name: z.string().min(1).max(100),
   description: z.string().min(1).max(1000),
@@ -29,7 +29,7 @@ const MintCollectionDto = z.object({
   })).optional(),
 });
 
-const MintFractionsDto = z.object({
+const mintFractionsSchema = z.object({
   listingId: z.string().cuid(),
   totalShares: z.number().int().min(1).max(10000),
   baseName: z.string().min(1).max(100),
@@ -41,8 +41,22 @@ const MintFractionsDto = z.object({
   })).optional(),
 });
 
-type MintCollectionDto = z.infer<typeof MintCollectionDto>;
-type MintFractionsDto = z.infer<typeof MintFractionsDto>;
+type MintCollectionDto = {
+  listingId: string;
+  name: string;
+  description: string;
+  image?: string;
+  attributes?: Array<{ trait_type: string; value: string | number }>;
+};
+
+type MintFractionsDto = {
+  listingId: string;
+  totalShares: number;
+  baseName: string;
+  baseDescription: string;
+  image?: string;
+  attributes?: Array<{ trait_type: string; value: string | number }>;
+};
 
 @ApiTags('nfts')
 @Controller('nfts')
@@ -60,7 +74,7 @@ export class NftsController {
   @ApiResponse({ status: 404, description: 'Listing not found' })
   async mintCollection(
     @Request() req,
-    @Body(new ZodValidationPipe(MintCollectionDto)) mintCollectionDto: MintCollectionDto,
+    @Body(new ZodValidationPipe(mintCollectionSchema)) mintCollectionDto: MintCollectionDto,
   ) {
     return this.nftsService.mintCollection(req.user.sub, mintCollectionDto);
   }
@@ -76,7 +90,7 @@ export class NftsController {
   @ApiResponse({ status: 404, description: 'Listing not found' })
   async mintFractions(
     @Request() req,
-    @Body(new ZodValidationPipe(MintFractionsDto)) mintFractionsDto: MintFractionsDto,
+    @Body(new ZodValidationPipe(mintFractionsSchema)) mintFractionsDto: MintFractionsDto,
   ) {
     return this.nftsService.mintFractions(req.user.sub, mintFractionsDto);
   }

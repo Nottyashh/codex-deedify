@@ -15,7 +15,7 @@ import { ValuationService } from './valuation.service';
 import { JwtAuthGuard, AdminGuard } from '../common/guards/jwt.guard';
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 
-const EstimateValueDto = z.object({
+const estimateValueSchema = z.object({
   location: z.string().min(1, 'Location is required'),
   parcelSize: z.number().positive('Parcel size must be positive'),
   geoJson: z.any().optional(),
@@ -28,7 +28,18 @@ const EstimateValueDto = z.object({
   infraScore: z.number().min(0).max(100).optional(),
 });
 
-type EstimateValueDto = z.infer<typeof EstimateValueDto>;
+type EstimateValueDto = {
+  location: string;
+  parcelSize: number;
+  geoJson?: any;
+  comps?: Array<{
+    location: string;
+    size: number;
+    price: number;
+  }>;
+  soilScore?: number;
+  infraScore?: number;
+};
 
 @ApiTags('valuation')
 @Controller('valuation')
@@ -44,7 +55,7 @@ export class ValuationController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async estimateValue(
-    @Body(new ZodValidationPipe(EstimateValueDto)) estimateValueDto: EstimateValueDto,
+    @Body(new ZodValidationPipe(estimateValueSchema)) estimateValueDto: EstimateValueDto,
   ) {
     return this.valuationService.estimateValue(estimateValueDto);
   }

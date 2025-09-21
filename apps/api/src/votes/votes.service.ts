@@ -270,8 +270,10 @@ export class VotesService {
     // Check if user already voted
     const existingVote = await this.votesRepository.findVote({
       where: {
-        proposalId: data.proposalId,
-        userId,
+        proposalId_userId: {
+          proposalId: data.proposalId,
+          userId,
+        },
       },
     });
 
@@ -368,8 +370,10 @@ export class VotesService {
   async getUserVoteForProposal(userId: string, proposalId: string) {
     const vote = await this.votesRepository.findVote({
       where: {
-        proposalId,
-        userId,
+        proposalId_userId: {
+          proposalId,
+          userId,
+        },
       },
       include: {
         proposal: {

@@ -19,7 +19,7 @@ import { JwtAuthGuard, ListerGuard, AdminGuard } from '../common/guards/jwt.guar
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
-const CreateListingDto = z.object({
+const createListingSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(2000),
   locationText: z.string().min(1).max(500),
@@ -31,7 +31,7 @@ const CreateListingDto = z.object({
   pricePerShare: z.number().positive(),
 });
 
-const UpdateListingDto = z.object({
+const updateListingSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().min(1).max(2000).optional(),
   locationText: z.string().min(1).max(500).optional(),
@@ -44,7 +44,7 @@ const UpdateListingDto = z.object({
   status: z.enum(['PENDING', 'LIVE', 'PAUSED', 'CLOSED']).optional(),
 });
 
-const SearchListingsDto = z.object({
+const searchListingsSchema = z.object({
   ...PaginationDto.shape,
   search: z.string().optional(),
   location: z.string().optional(),
@@ -55,9 +55,44 @@ const SearchListingsDto = z.object({
   status: z.enum(['PENDING', 'LIVE', 'PAUSED', 'CLOSED']).optional(),
 });
 
-type CreateListingDto = z.infer<typeof CreateListingDto>;
-type UpdateListingDto = z.infer<typeof UpdateListingDto>;
-type SearchListingsDto = z.infer<typeof SearchListingsDto>;
+type CreateListingDto = {
+  title: string;
+  description: string;
+  locationText: string;
+  geoJson?: any;
+  parcelSize: number;
+  coordinatePolicy: boolean;
+  coordinatePolicyNote?: string;
+  totalShares: number;
+  pricePerShare: number;
+};
+
+type UpdateListingDto = Partial<
+  Pick<
+    CreateListingDto,
+    | 'title'
+    | 'description'
+    | 'locationText'
+    | 'geoJson'
+    | 'parcelSize'
+    | 'coordinatePolicy'
+    | 'coordinatePolicyNote'
+    | 'totalShares'
+    | 'pricePerShare'
+  >
+> & {
+  status?: 'PENDING' | 'LIVE' | 'PAUSED' | 'CLOSED';
+};
+
+type SearchListingsDto = PaginationDto & {
+  search?: string;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minSize?: number;
+  maxSize?: number;
+  status?: 'PENDING' | 'LIVE' | 'PAUSED' | 'CLOSED';
+};
 
 @ApiTags('listings')
 @Controller('listings')
@@ -74,7 +109,7 @@ export class ListingsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(
     @Request() req,
-    @Body(new ZodValidationPipe(CreateListingDto)) createListingDto: CreateListingDto,
+    @Body(new ZodValidationPipe(createListingSchema)) createListingDto: CreateListingDto,
   ) {
     return this.listingsService.create(req.user.sub, createListingDto);
   }
@@ -82,14 +117,14 @@ export class ListingsController {
   @Get()
   @ApiOperation({ summary: 'Get all listings with search and filters' })
   @ApiResponse({ status: 200, description: 'Listings retrieved successfully' })
-  async findAll(@Query(new ZodValidationPipe(SearchListingsDto)) query: SearchListingsDto) {
+  async findAll(@Query(new ZodValidationPipe(searchListingsSchema)) query: SearchListingsDto) {
     return this.listingsService.findAll(query);
   }
 
   @Get('public')
   @ApiOperation({ summary: 'Get public listings (no auth required)' })
   @ApiResponse({ status: 200, description: 'Public listings retrieved successfully' })
-  async findPublic(@Query(new ZodValidationPipe(SearchListingsDto)) query: SearchListingsDto) {
+  async findPublic(@Query(new ZodValidationPipe(searchListingsSchema)) query: SearchListingsDto) {
     return this.listingsService.findPublic(query);
   }
 
@@ -111,7 +146,7 @@ export class ListingsController {
   async update(
     @Param('id') id: string,
     @Request() req,
-    @Body(new ZodValidationPipe(UpdateListingDto)) updateListingDto: UpdateListingDto,
+    @Body(new ZodValidationPipe(updateListingSchema)) updateListingDto: UpdateListingDto,
   ) {
     return this.listingsService.update(id, req.user.sub, updateListingDto);
   }

@@ -18,19 +18,27 @@ import { JwtAuthGuard, AdminGuard } from '../common/guards/jwt.guard';
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
-const UpdateUserDto = z.object({
+const updateUserSchema = z.object({
   role: z.enum(['INVESTOR', 'LISTER', 'ADMIN']).optional(),
   kycStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED']).optional(),
   walletAddress: z.string().optional(),
 });
 
-const UpdateKycStatusDto = z.object({
+const updateKycStatusSchema = z.object({
   kycStatus: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED']),
   reason: z.string().optional(),
 });
 
-type UpdateUserDto = z.infer<typeof UpdateUserDto>;
-type UpdateKycStatusDto = z.infer<typeof UpdateKycStatusDto>;
+type UpdateUserDto = {
+  role?: 'INVESTOR' | 'LISTER' | 'ADMIN';
+  kycStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
+  walletAddress?: string;
+};
+
+type UpdateKycStatusDto = {
+  kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
+  reason?: string;
+};
 
 @ApiTags('users')
 @Controller('users')
@@ -69,7 +77,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async update(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(UpdateUserDto)) updateUserDto: UpdateUserDto,
+    @Body(new ZodValidationPipe(updateUserSchema)) updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
   }
@@ -82,7 +90,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateKycStatus(
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(UpdateKycStatusDto)) updateKycDto: UpdateKycStatusDto,
+    @Body(new ZodValidationPipe(updateKycStatusSchema)) updateKycDto: UpdateKycStatusDto,
   ) {
     return this.usersService.updateKycStatus(id, updateKycDto);
   }

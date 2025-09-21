@@ -143,7 +143,7 @@ export class MarketplaceService {
         shareMint: data.shareMint,
         sellerWallet: order.seller.walletAddress,
         buyerWallet: data.buyerWallet,
-        price: order.price,
+        price: Number(order.price),
       });
 
       // Update order status

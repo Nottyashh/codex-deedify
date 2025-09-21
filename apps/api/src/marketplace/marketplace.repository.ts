@@ -6,39 +6,55 @@ import { Prisma } from '@prisma/client';
 export class MarketplaceRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findMany(args?: Prisma.OrderFindManyArgs) {
+  async findMany<T extends Prisma.OrderFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.OrderFindManyArgs>
+  ) {
     return this.prisma.order.findMany(args);
   }
 
-  async findUnique(args: Prisma.OrderFindUniqueArgs) {
+  async findUnique<T extends Prisma.OrderFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.OrderFindUniqueArgs>
+  ) {
     return this.prisma.order.findUnique(args);
   }
 
-  async findFirst(args: Prisma.OrderFindFirstArgs) {
+  async findFirst<T extends Prisma.OrderFindFirstArgs>(
+    args: Prisma.SelectSubset<T, Prisma.OrderFindFirstArgs>
+  ) {
     return this.prisma.order.findFirst(args);
   }
 
-  async create(args: Prisma.OrderCreateArgs) {
+  async create<T extends Prisma.OrderCreateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.OrderCreateArgs>
+  ) {
     return this.prisma.order.create(args);
   }
 
-  async update(args: Prisma.OrderUpdateArgs) {
+  async update<T extends Prisma.OrderUpdateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.OrderUpdateArgs>
+  ) {
     return this.prisma.order.update(args);
   }
 
-  async delete(args: Prisma.OrderDeleteArgs) {
+  async delete<T extends Prisma.OrderDeleteArgs>(
+    args: Prisma.SelectSubset<T, Prisma.OrderDeleteArgs>
+  ) {
     return this.prisma.order.delete(args);
   }
 
-  async count(args?: Prisma.OrderCountArgs) {
+  async count<T extends Prisma.OrderCountArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.OrderCountArgs>
+  ) {
     return this.prisma.order.count(args);
   }
 
-  async aggregate(args: Prisma.OrderAggregateArgs) {
+  async aggregate<T extends Prisma.OrderAggregateArgs>(args: T) {
     return this.prisma.order.aggregate(args);
   }
 
-  async upsert(args: Prisma.OrderUpsertArgs) {
+  async upsert<T extends Prisma.OrderUpsertArgs>(
+    args: Prisma.SelectSubset<T, Prisma.OrderUpsertArgs>
+  ) {
     return this.prisma.order.upsert(args);
   }
 }

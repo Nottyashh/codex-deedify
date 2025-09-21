@@ -18,7 +18,7 @@ import { JwtAuthGuard, ListerGuard, AdminGuard } from '../common/guards/jwt.guar
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
-const CreateProposalDto = z.object({
+const createProposalSchema = z.object({
   listingId: z.string().cuid('Invalid listing ID'),
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
   description: z.string().min(1, 'Description is required').max(2000, 'Description too long'),
@@ -26,13 +26,23 @@ const CreateProposalDto = z.object({
   endsAt: z.string().datetime('Invalid end date'),
 });
 
-const VoteDto = z.object({
+const voteSchema = z.object({
   proposalId: z.string().cuid('Invalid proposal ID'),
   choice: z.enum(['YES', 'NO'], { required_error: 'Choice is required' }),
 });
 
-type CreateProposalDto = z.infer<typeof CreateProposalDto>;
-type VoteDto = z.infer<typeof VoteDto>;
+type CreateProposalDto = {
+  listingId: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string;
+};
+
+type VoteDto = {
+  proposalId: string;
+  choice: 'YES' | 'NO';
+};
 
 @ApiTags('votes')
 @Controller('votes')
@@ -50,7 +60,7 @@ export class VotesController {
   @ApiResponse({ status: 404, description: 'Listing not found' })
   async createProposal(
     @Request() req,
-    @Body(new ZodValidationPipe(CreateProposalDto)) createProposalDto: CreateProposalDto,
+    @Body(new ZodValidationPipe(createProposalSchema)) createProposalDto: CreateProposalDto,
   ) {
     return this.votesService.createProposal(req.user.sub, createProposalDto);
   }
@@ -91,7 +101,7 @@ export class VotesController {
   @ApiResponse({ status: 404, description: 'Proposal not found' })
   async castVote(
     @Request() req,
-    @Body(new ZodValidationPipe(VoteDto)) voteDto: VoteDto,
+    @Body(new ZodValidationPipe(voteSchema)) voteDto: VoteDto,
   ) {
     return this.votesService.castVote(req.user.sub, voteDto);
   }

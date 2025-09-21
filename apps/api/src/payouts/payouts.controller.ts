@@ -18,13 +18,17 @@ import { JwtAuthGuard, AdminGuard } from '../common/guards/jwt.guard';
 import { ZodValidationPipe } from '../common/pipes/zod.pipe';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
-const TriggerPayoutDto = z.object({
+const triggerPayoutSchema = z.object({
   listingId: z.string().cuid('Invalid listing ID'),
   reason: z.enum(['DIVIDEND', 'BUYOUT'], { required_error: 'Reason is required' }),
   amount: z.number().positive('Amount must be positive').optional(),
 });
 
-type TriggerPayoutDto = z.infer<typeof TriggerPayoutDto>;
+type TriggerPayoutDto = {
+  listingId: string;
+  reason: 'DIVIDEND' | 'BUYOUT';
+  amount?: number;
+};
 
 @ApiTags('payouts')
 @Controller('payouts')
@@ -41,7 +45,7 @@ export class PayoutsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Listing not found' })
   async triggerPayout(
-    @Body(new ZodValidationPipe(TriggerPayoutDto)) triggerPayoutDto: TriggerPayoutDto,
+    @Body(new ZodValidationPipe(triggerPayoutSchema)) triggerPayoutDto: TriggerPayoutDto,
   ) {
     return this.payoutsService.triggerPayout(triggerPayoutDto);
   }
